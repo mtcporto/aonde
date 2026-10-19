@@ -1,0 +1,202 @@
+/* ═════════════════════════════════════════════════════════════
+   Aonde • Design System Editorial & Contemporâneo
+   ═════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-page: #F6F5F2;
+  --bg-surface: #FFFFFF;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --accent: #E14D2A;
+  --accent-soft: #FFF1EE;
+  --border-subtle: rgba(17, 24, 39, 0.07);
+}
+
+html.dark {
+  --bg-page: #0B0D11;
+  --bg-surface: #14171F;
+  --text-main: #F9FAFB;
+  --text-muted: #9CA3AF;
+  --accent: #FF6B4A;
+  --accent-soft: rgba(255, 107, 74, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif-editorial {
+  font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+}
+
+/* ─── Scrollbar Oculta para Trilhos Horizontais ───────────── */
+.no-scrollbar {
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Navegação Segmentada (Pills) ────────────────────────── */
+.seg-pill {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.seg-pill.active {
+  background-color: var(--text-main);
+  color: var(--bg-surface);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Chips de Categoria Minimalistas ─────────────────────── */
+.cat-chip {
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cat-chip.active {
+  background-color: var(--accent) !important;
+  color: #FFFFFF !important;
+  border-color: var(--accent) !important;
+}
+
+/* ─── Filtros de Comodidades ──────────────────────────────── */
+.amenity-btn {
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.amenity-btn.active {
+  background-color: var(--text-main) !important;
+  color: var(--bg-surface) !important;
+  border-color: var(--text-main) !important;
+}
+
+/* ─── Cards Minimalistas (Estilo Airbnb / Guia Editorial) ── */
+.minimal-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.minimal-card:hover {
+  transform: translateY(-4px);
+}
+
+.minimal-card .card-photo {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.minimal-card:hover .card-photo {
+  transform: scale(1.05);
+}
+
+/* ─── Coração de Favorito ─────────────────────────────────── */
+@keyframes popHeart {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.fav-trigger.is-fav svg {
+  animation: popHeart 0.32s ease;
+  fill: #EF4444;
+  stroke: #EF4444;
+}
+
+/* ─── Mapa Leaflet ────────────────────────────────────────── */
+#map-canvas {
+  height: 440px;
+  width: 100%;
+  z-index: 10;
+}
+
+#detail-map-canvas {
+  height: 300px;
+  width: 100%;
+  z-index: 10;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  padding: 2px !important;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16) !important;
+}
+
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  background: #1E2430 !important;
+  color: #F9FAFB !important;
+}
+
+/* ─── Ícones Monocromáticos Fine-Line (.icon-svg) ─────────── */
+.icon-svg {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.cat-chip .icon-svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.75;
+  transition: opacity 0.18s ease;
+}
+
+.cat-chip.active .icon-svg,
+.cat-chip:hover .icon-svg {
+  opacity: 1;
+}
+
+.amenity-btn .icon-svg {
+  width: 13.5px;
+  height: 13.5px;
+  opacity: 0.7;
+}
+
+.amenity-btn.active .icon-svg {
+  opacity: 1;
+}
+
+.custom-map-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.28);
+  border: 2px solid #FFFFFF;
+  color: #FFFFFF;
+}
+
+.custom-map-pin span {
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+}
+
+.custom-map-pin .icon-svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}

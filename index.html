@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Curadoria gastronômica e de hospedagem em João Pessoa, Paraíba." />
+  <title>Aonde — Curadoria João Pessoa</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            coral: '#E14D2A',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts: Instrument Serif (Editorial) + Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body class="min-h-screen flex flex-col selection:bg-coral selection:text-white">
+
+  <!-- ─── TOP NAVBAR (FLOATING GLASS) ──────────────────────────────── -->
+  <header class="sticky top-0 z-40 bg-[#F6F5F2]/85 dark:bg-[#0B0D11]/85 backdrop-blur-xl border-b border-black/[0.06] dark:border-white/[0.07]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between gap-4">
+
+      <!-- Brand Logo -->
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-2xl bg-coral text-white flex items-center justify-center font-serif italic text-2xl shadow-sm group-hover:scale-105 transition">
+          a
+        </div>
+        <div>
+          <span class="font-serif text-3xl tracking-tight text-neutral-900 dark:text-white leading-none block">
+            Aonde
+          </span>
+          <span class="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 block mt-0.5">
+            João Pessoa · PB
+          </span>
+        </div>
+      </a>
+
+      <!-- Segmented Navigation Pills -->
+      <nav class="hidden md:flex items-center p-1.5 rounded-full bg-neutral-200/70 dark:bg-neutral-800/80 border border-black/5 dark:border-white/5" aria-label="Navegação principal">
+        <button type="button" data-tab="restaurantes"
+                class="seg-pill active px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2">
+          <span>Gastronomia</span>
+          <span id="rest-count" class="opacity-60 font-normal">49</span>
+        </button>
+        <button type="button" data-tab="hoteis"
+                class="seg-pill px-5 py-2 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-2">
+          <span>Hospedagem</span>
+          <span id="hotel-count" class="opacity-60 font-normal">10</span>
+        </button>
+        <button type="button" data-tab="favoritos"
+                class="seg-pill px-5 py-2 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-300 flex items-center gap-2">
+          <span>Salvos</span>
+          <span id="fav-count" class="px-1.5 py-0.2 rounded-full bg-coral/15 text-coral text-[11px] font-bold">0</span>
+        </button>
+      </nav>
+
+      <!-- Right Actions: Map Toggle & Theme -->
+      <div class="flex items-center gap-2.5">
+        <button id="map-toggle-btn" type="button"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold
+                       bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800
+                       text-neutral-800 dark:text-neutral-200 hover:border-coral transition shadow-2xs">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/>
+            <path d="M15 5.764v15"/><path d="M9 3.236v15"/>
+          </svg>
+          <span>Mapa</span>
+        </button>
+
+        <button id="theme-toggle-btn" type="button"
+                class="w-10 h-10 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800
+                       flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:border-coral transition"
+                aria-label="Alternar tema">
+          <svg id="theme-icon-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/>
+            <path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/>
+            <path d="m19.07 4.93-1.41 1.41"/>
+          </svg>
+          <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Segmented Pills -->
+    <div class="md:hidden px-4 pb-3 flex justify-center">
+      <div class="inline-flex w-full max-w-sm p-1 rounded-full bg-neutral-200/70 dark:bg-neutral-800/80">
+        <button type="button" data-tab="restaurantes" class="seg-pill active flex-1 py-2 rounded-full text-xs font-semibold text-center">
+          Gastronomia
+        </button>
+        <button type="button" data-tab="hoteis" class="seg-pill flex-1 py-2 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center">
+          Hospedagem
+        </button>
+        <button type="button" data-tab="favoritos" class="seg-pill flex-1 py-2 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center">
+          Salvos (<span id="fav-count-mobile">0</span>)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── EDITORIAL HERO & COMMAND BAR ─────────────────────────────── -->
+  <section class="max-w-7xl w-full mx-auto px-4 sm:px-8 pt-10 pb-6">
+    <div class="grid lg:grid-cols-12 gap-8 items-end mb-8">
+      <div class="lg:col-span-7">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-coral mb-3">
+          Guia de bolso · Litoral Paraibano
+        </p>
+        <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl text-neutral-900 dark:text-white leading-[0.98] tracking-tight">
+          Descubra os melhores sabores &amp; refúgios de <span class="italic font-normal text-coral">Jampa.</span>
+        </h1>
+      </div>
+      <div class="lg:col-span-5">
+        <p class="text-sm sm:text-base text-neutral-500 dark:text-neutral-400 leading-relaxed">
+          Uma seleção enxuta de 59 lugares entre cafés botânicos, mesas à beira-mar, botecos autênticos e hotéis charmosos de Tambaú ao Bessa.
+        </p>
+      </div>
+    </div>
+
+    <!-- Unified Search & Filter Bar -->
+    <div class="bg-white dark:bg-[#14171F] p-2.5 rounded-3xl shadow-sm border border-black/[0.06] dark:border-white/[0.07] flex flex-col md:flex-row items-stretch md:items-center gap-2">
+      <!-- Search Input -->
+      <div class="relative flex-1 flex items-center">
+        <svg class="absolute left-4 text-neutral-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input id="search-input" type="text"
+               placeholder="Buscar por nome, culinária ou bairro…"
+               class="w-full pl-11 pr-9 py-3 rounded-2xl bg-transparent text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none" />
+        <button id="clear-search-btn" type="button"
+                class="hidden absolute right-3 w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:hover:text-white flex items-center justify-center transition"
+                aria-label="Limpar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="hidden md:block w-px h-7 bg-neutral-200 dark:bg-neutral-800"></div>
+
+      <!-- Profile, Neighborhood & Sort Selects -->
+      <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 px-2">
+        <select id="tier-select"
+                aria-label="Perfil ou Ocasião"
+                class="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200
+                       rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition">
+          <option value="all">Todos os perfis</option>
+        </select>
+
+        <select id="neighborhood-select"
+                aria-label="Bairro"
+                class="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200
+                       rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition">
+          <option value="all">Todos os bairros</option>
+        </select>
+
+        <select id="sort-select"
+                aria-label="Ordenar"
+                class="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200
+                       rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition">
+          <option value="curated">Por Perfil &amp; Ocasião</option>
+          <option value="price-desc">Preço: $$$$ → $</option>
+          <option value="price-asc">Preço: $ → $$$$</option>
+          <option value="name-asc">Ordem A–Z</option>
+          <option value="neighborhood">Por Bairro</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category & Amenity Rail -->
+    <div class="mt-4 flex flex-col gap-3">
+      <!-- Category Chips -->
+      <div id="category-bar-wrapper">
+        <div id="rest-filters" class="filter-group no-scrollbar flex items-center gap-2 py-1">
+          <button class="cat-chip active inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="all">
+            <span>Todas as culinárias</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="nordestino">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <span>Nordestino</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="frutos-do-mar">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/></svg>
+            <span>Frutos do Mar</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="alta-gastronomia">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
+            <span>Alta Gastronomia</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="italiana">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
+            <span>Italiana</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="cafe">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></svg>
+            <span>Cafés &amp; Doces</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="bar">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M12 15v7"/><path d="m19 3-7 8-7-8Z"/><path d="M5 3h14"/></svg>
+            <span>Bares &amp; Botecos</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="churrasco">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            <span>Carnes &amp; Grill</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="pizzaria">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 11h.01"/><path d="M11 15h.01"/><path d="M16 16h.01"/><path d="m2 16 20 6-6-20A20 20 0 0 0 2 16"/><path d="M5.71 17.11a17.04 17.04 0 0 1 11.4-11.4"/></svg>
+            <span>Pizzas</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="oriental">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16a1 1 0 0 1 1 1v.5a8.5 8.5 0 0 1-17 0V12a1 1 0 0 1 1-1Z"/><path d="m7 11 9-8"/><path d="m11 11 9-5"/><path d="M8 21h8"/></svg>
+            <span>Oriental</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="hamburgueria">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16a1 1 0 0 1 1 1v.5a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 12.5V12a1 1 0 0 1 1-1Z"/><path d="M5 11V9a7 7 0 0 1 14 0v2"/><path d="M5 14v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg>
+            <span>Burgers &amp; Lanches</span>
+          </button>
+        </div>
+
+        <div id="hotel-filters" class="filter-group no-scrollbar hidden flex items-center gap-2 py-1">
+          <button class="cat-chip active inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="all">
+            <span>Todos</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="hotel">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/><path d="m9 16 .348-.24c1.465-1.013 3.84-1.013 5.304 0L15 16"/><path d="M8 7h.01"/><path d="M16 7h.01"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M16 11h.01"/><path d="M8 11h.01"/><path d="M10 22v-4.5m4 0V22"/></svg>
+            <span>Hotéis</span>
+          </button>
+          <button class="cat-chip inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-full bg-white dark:bg-[#14171F] border border-black/[0.07] dark:border-white/[0.08] whitespace-nowrap" data-filter="hostel">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
+            <span>Hostels</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subtle Amenity Filters + Status Row -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mr-1">Comodidades:</span>
+          <button type="button" data-amenity="accessible" class="amenity-btn inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4.24 14.5a5 5 0 0 0 6.88 6"/><path d="M13.76 17.5a5 5 0 0 0-6.88-6"/></svg>
+            <span>Acessível</span>
+            <span data-amenity-count="accessible" class="opacity-55 text-[11px]"></span>
+          </button>
+          <button type="button" data-amenity="petFriendly" class="amenity-btn inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>
+            <span>Pet Friendly</span>
+            <span data-amenity-count="petFriendly" class="opacity-55 text-[11px]"></span>
+          </button>
+          <button type="button" id="pill-kids" data-amenity="kidsSpace" class="amenity-btn inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+            <span>Espaço Kids</span>
+            <span data-amenity-count="kidsSpace" class="opacity-55 text-[11px]"></span>
+          </button>
+          <button type="button" id="pill-pool" data-amenity="pool" class="amenity-btn hidden inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+            <span>Piscina</span>
+            <span data-amenity-count="pool" class="opacity-55 text-[11px]"></span>
+          </button>
+          <button type="button" data-amenity="parking" class="amenity-btn inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>
+            <span>Estacionamento</span>
+            <span data-amenity-count="parking" class="opacity-55 text-[11px]"></span>
+          </button>
+          <button type="button" data-amenity="wifi" class="amenity-btn inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 whitespace-nowrap">
+            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg>
+            <span>Wi-Fi</span>
+            <span data-amenity-count="wifi" class="opacity-55 text-[11px]"></span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-4 ml-auto">
+          <button id="clear-filters-btn" type="button"
+                  class="hidden text-xs font-semibold text-coral hover:underline">
+            Limpar filtros
+          </button>
+          <p id="results-label" class="text-xs font-medium text-neutral-400"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── MAIN GALLERY & MAP ───────────────────────────────────────── -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-8 pb-20 flex-1">
+
+    <!-- Collapsible Map -->
+    <section id="map-section" class="hidden mb-10">
+      <div class="rounded-3xl overflow-hidden border border-black/[0.08] dark:border-white/[0.08] shadow-xl bg-white dark:bg-[#14171F]">
+        <div id="map-canvas"></div>
+      </div>
+    </section>
+
+    <!-- Curated Sections / Cards Container -->
+    <div id="places-grid"></div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden text-center py-24 px-4">
+      <p class="font-serif italic text-4xl text-neutral-400 mb-2">Nenhum lugar encontrado</p>
+      <p id="empty-subtitle" class="text-sm text-neutral-500 max-w-md mx-auto mb-6">
+        Experimente remover alguns filtros ou buscar por outro termo.
+      </p>
+      <button id="empty-reset-btn" type="button"
+              class="px-5 py-2.5 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold">
+        Redefinir busca
+      </button>
+    </div>
+  </main>
+
+  <!-- ─── TOAST ────────────────────────────────────────────────────── -->
+  <div id="toast-notification"
+       class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-4 py-2.5 rounded-full shadow-xl text-xs font-semibold">
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────────────── -->
+  <footer class="border-t border-black/[0.06] dark:border-white/[0.07] py-10 px-4 sm:px-8 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-400">
+      <div class="flex items-center gap-2">
+        <span class="font-serif italic text-xl text-neutral-800 dark:text-neutral-200">Aonde</span>
+        <span>· Curadoria independente de João Pessoa, Paraíba</span>
+      </div>
+      <div>
+        Dados cartográficos <a href="https://www.openstreetmap.org" target="_blank" rel="noopener" class="underline hover:text-coral">OpenStreetMap</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
