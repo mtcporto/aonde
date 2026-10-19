@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Aonde — Curadoria João Pessoa",
@@ -25,27 +26,7 @@ export default function RootLayout({
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           crossOrigin=""
         />
-        <link rel="stylesheet" href="/css/style.css" />
-        <Script
-          src="https://cdn.tailwindcss.com"
-          strategy="beforeInteractive"
-        />
-        <Script id="tailwind-config" strategy="beforeInteractive">{`
-          if (typeof tailwind !== 'undefined') {
-            tailwind.config = {
-              darkMode: 'class',
-              theme: {
-                extend: {
-                  colors: { coral: '#E14D2A' },
-                  fontFamily: {
-                    sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                    serif: ['"Instrument Serif"', 'Georgia', 'serif'],
-                  }
-                }
-              }
-            };
-          }
-        `}</Script>
+        <link rel="stylesheet" href="/css/globals.css" />
         <Script
           src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           strategy="beforeInteractive"

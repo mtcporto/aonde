@@ -195,6 +195,15 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
           a.neighborhood.localeCompare(b.neighborhood, "pt-BR") ||
           a.name.localeCompare(b.name, "pt-BR")
       );
+    } else if (sortBy === "curated") {
+      sorted.sort((a, b) => {
+        const orderA = (TIERS_META as any)[a.tier]?.order || 99;
+        const orderB = (TIERS_META as any)[b.tier]?.order || 99;
+        if (orderA !== orderB) return orderA - orderB;
+        const priceDiff = getPriceWeight(b.price) - getPriceWeight(a.price);
+        if (priceDiff !== 0) return priceDiff;
+        return a.name.localeCompare(b.name, "pt-BR");
+      });
     } else {
       sorted.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     }
@@ -217,7 +226,6 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
     return counts;
   }, [preAmenityFiltered, amenities]);
 
-  // Update Leaflet map when visible
   useEffect(() => {
     if (!mapVisible) return;
     const L = (window as any).L;
@@ -247,8 +255,8 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
       const icon = L.divIcon({
         className: "",
         html: `<div class="custom-map-pin" style="background:${pinBg}"><span>${meta.icon}</span></div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 34],
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
       });
       const marker = L.marker([item.lat, item.lon], { icon });
       marker.bindPopup(`
@@ -295,97 +303,88 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
 
   const renderCard = (item: PlaceItem) => {
     const isFav = favorites.includes(item.slugId);
-    const meta = (TYPE_META as any)[item.type] || { icon: (ICONS as any).utensils, label: item.typeLabel };
-    const tierMeta = (TIERS_META as any)[item.tier];
+    const meta = (TYPE_META as any)[item.type] || {
+      icon: item.kind === "hotel" ? (ICONS as any).hotel : (ICONS as any).utensils,
+      label: item.typeLabel,
+    };
 
     return (
-      <article
-        key={item.slugId}
-        className="place-card group rounded-3xl overflow-hidden flex flex-col cursor-pointer"
-        onClick={() => {
-          window.location.href = `/detalhes?id=${item.slugId}`;
-        }}
-      >
-        <div className="card-img-wrap relative">
-          <img src={item.image} alt={item.name} loading="lazy" />
-          <div className="card-scrim absolute inset-0 pointer-events-none" />
+      <article key={item.slugId} className="minimal-card group relative flex flex-col">
+        <a href={`/detalhes?id=${item.slugId}`} className="block focus:outline-none">
+          <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 mb-3.5 shadow-sm">
+            <img
+              src={item.image}
+              alt={item.name}
+              loading="lazy"
+              className="card-photo w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 opacity-70 group-hover:opacity-90 transition-opacity" />
 
-          <div className="absolute top-3.5 left-3.5 right-3.5 flex items-start justify-between gap-2">
-            <span className="glass-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold">
-              <span dangerouslySetInnerHTML={{ __html: meta.icon }} />
-              <span>{item.typeLabel}</span>
-            </span>
-
-            <button
-              type="button"
-              onClick={(e) => toggleFavorite(item.slugId, e)}
-              className={`fav-trigger ${isFav ? "is-fav" : ""} w-9 h-9 rounded-full bg-black/45 backdrop-blur-md text-white flex items-center justify-center hover:scale-110 transition`}
-              aria-label="Salvar nos favoritos"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.85"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between gap-2 text-white">
-            <span className="text-xs font-medium opacity-95 drop-shadow-xs">
+            <span className="absolute bottom-3 left-3.5 text-[11px] font-semibold tracking-wide text-white bg-black/45 backdrop-blur-md px-3 py-1 rounded-full">
               {item.neighborhood}
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/55 backdrop-blur-md border border-white/15 tracking-wider">
-              {item.price}
-            </span>
           </div>
-        </div>
 
-        <div className="p-5 flex-1 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <h3 className="font-bold text-base text-neutral-900 dark:text-white group-hover:text-coral transition-colors line-clamp-1">
+          <div className="px-1">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold text-[16px] text-neutral-900 dark:text-white group-hover:text-coral transition-colors truncate">
                 {item.name}
               </h3>
-              {tierMeta?.badge && (
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800/90 text-neutral-500 dark:text-neutral-400">
-                  {tierMeta.badge}
-                </span>
-              )}
+              <span className="text-neutral-400 group-hover:text-coral group-hover:translate-x-0.5 transition-all shrink-0">
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </span>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed mb-4">
-              {item.description}
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 flex items-center gap-1.5 truncate">
+              <span
+                className="text-neutral-400 dark:text-neutral-500 shrink-0"
+                dangerouslySetInnerHTML={{ __html: meta.icon }}
+              />
+              <span className="truncate">{item.typeLabel}</span>
+              {item.price && (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span className="font-semibold text-neutral-600 dark:text-neutral-300 shrink-0">
+                    {item.price}
+                  </span>
+                </>
+              )}
             </p>
           </div>
+        </a>
 
-          <div className="pt-3 border-t border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between gap-2 text-[11px] text-neutral-400">
-            <span className="truncate">{item.hours}</span>
-            <div className="flex items-center gap-1.5 shrink-0 text-neutral-400 dark:text-neutral-500">
-              {item.feat?.accessible && (
-                <span title="Acessível" dangerouslySetInnerHTML={{ __html: (ICONS as any).accessible }} />
-              )}
-              {item.feat?.petFriendly && (
-                <span title="Pet Friendly" dangerouslySetInnerHTML={{ __html: (ICONS as any).paw }} />
-              )}
-              {item.feat?.kidsSpace && (
-                <span title="Espaço Kids" dangerouslySetInnerHTML={{ __html: (ICONS as any).kids }} />
-              )}
-              {item.feat?.pool && (
-                <span title="Piscina" dangerouslySetInnerHTML={{ __html: (ICONS as any).pool }} />
-              )}
-              {item.feat?.parking && (
-                <span title="Estacionamento" dangerouslySetInnerHTML={{ __html: (ICONS as any).parking }} />
-              )}
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={(e) => toggleFavorite(item.slugId, e)}
+          aria-label={isFav ? "Remover dos salvos" : "Salvar lugar"}
+          className={`fav-trigger ${
+            isFav ? "is-fav" : ""
+          } absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/85 dark:bg-neutral-900/85 backdrop-blur-md flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:scale-110 transition shadow-sm`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          </svg>
+        </button>
       </article>
     );
   };
@@ -416,7 +415,9 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
                 setTierFilter("all");
                 setCategoryFilter("all");
               }}
-              className={`seg-pill ${tab === "restaurantes" ? "active" : "text-neutral-600 dark:text-neutral-300"} px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
+              className={`seg-pill ${
+                tab === "restaurantes" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
             >
               <span>Gastronomia</span>
               <span className="opacity-60 font-normal">{restaurants.length}</span>
@@ -428,7 +429,9 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
                 setTierFilter("all");
                 setCategoryFilter("all");
               }}
-              className={`seg-pill ${tab === "hoteis" ? "active" : "text-neutral-600 dark:text-neutral-300"} px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
+              className={`seg-pill ${
+                tab === "hoteis" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
             >
               <span>Hospedagem</span>
               <span className="opacity-60 font-normal">{hotels.length}</span>
@@ -440,33 +443,42 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
                 setTierFilter("all");
                 setCategoryFilter("all");
               }}
-              className={`seg-pill ${tab === "favoritos" ? "active" : "text-neutral-600 dark:text-neutral-300"} px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
+              className={`seg-pill ${
+                tab === "favoritos" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2`}
             >
               <span>Salvos</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-coral/15 text-coral text-[11px] font-bold">
+              <span className="px-1.5 py-0.5 rounded-full bg-coral/15 text-coral text-[11px] font-bold">
                 {favorites.length}
               </span>
             </button>
           </nav>
 
           <div className="flex items-center gap-2.5">
-            <span
-              title={`Fonte de dados: ${source === "turso" ? "Turso Edge DB" : "Local Fallback"}`}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Turso DB
-            </span>
-
             <button
               type="button"
               onClick={() => setMapVisible((v) => !v)}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold border transition shadow-2xs ${
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold border transition shadow-sm ${
                 mapVisible
                   ? "bg-coral text-white border-coral"
                   : "bg-white dark:bg-neutral-900 border-neutral-200/90 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 hover:border-coral"
               }`}
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" />
+                <path d="M15 5.764v15" />
+                <path d="M9 3.236v15" />
+              </svg>
               <span>{mapVisible ? "Fechar Mapa" : "Mapa"}</span>
             </button>
 
@@ -476,7 +488,87 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
               className="w-10 h-10 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:border-coral transition"
               aria-label="Alternar tema"
             >
-              {darkMode ? "☀️" : "🌙"}
+              {darkMode ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2" />
+                  <path d="M12 20v2" />
+                  <path d="m4.93 4.93 1.41 1.41" />
+                  <path d="m17.66 17.66 1.41 1.41" />
+                  <path d="M2 12h2" />
+                  <path d="M20 12h2" />
+                  <path d="m6.34 17.66-1.41 1.41" />
+                  <path d="m19.07 4.93-1.41 1.41" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="md:hidden px-4 pb-3 flex justify-center">
+          <div className="inline-flex w-full max-w-sm p-1 rounded-full bg-neutral-200/70 dark:bg-neutral-800/80">
+            <button
+              type="button"
+              onClick={() => {
+                setTab("restaurantes");
+                setTierFilter("all");
+                setCategoryFilter("all");
+              }}
+              className={`seg-pill ${
+                tab === "restaurantes" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } flex-1 py-2 rounded-full text-xs font-semibold text-center`}
+            >
+              Gastronomia
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTab("hoteis");
+                setTierFilter("all");
+                setCategoryFilter("all");
+              }}
+              className={`seg-pill ${
+                tab === "hoteis" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } flex-1 py-2 rounded-full text-xs font-semibold text-center`}
+            >
+              Hospedagem
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTab("favoritos");
+                setTierFilter("all");
+                setCategoryFilter("all");
+              }}
+              className={`seg-pill ${
+                tab === "favoritos" ? "active" : "text-neutral-600 dark:text-neutral-300"
+              } flex-1 py-2 rounded-full text-xs font-semibold text-center`}
+            >
+              Salvos ({favorites.length})
             </button>
           </div>
         </div>
@@ -503,20 +595,49 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
 
         <div className="bg-white dark:bg-[#14171F] p-2.5 rounded-3xl shadow-sm border border-black/[0.06] dark:border-white/[0.07] flex flex-col md:flex-row items-stretch md:items-center gap-2">
           <div className="relative flex-1 flex items-center">
+            <svg
+              className="absolute left-4 text-neutral-400 pointer-events-none"
+              xmlns="http://www.w3.org/2000/svg"
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nome, culinária ou bairro…"
-              className="w-full pl-5 pr-9 py-3 rounded-2xl bg-transparent text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none"
+              className="w-full pl-11 pr-9 py-3 rounded-2xl bg-transparent text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 flex items-center justify-center"
+                className="absolute right-3 w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:hover:text-white flex items-center justify-center transition"
+                aria-label="Limpar"
               >
-                ✕
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
               </button>
             )}
           </div>
@@ -527,7 +648,8 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
-              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer"
+              aria-label="Perfil ou Ocasião"
+              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition"
             >
               <option value="all">Todos os perfis</option>
               {availableTiers.map((t) => (
@@ -540,7 +662,8 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             <select
               value={neighborhoodFilter}
               onChange={(e) => setNeighborhoodFilter(e.target.value)}
-              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer"
+              aria-label="Bairro"
+              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition"
             >
               <option value="all">Todos os bairros</option>
               {availableNeighborhoods.map((nb) => (
@@ -553,7 +676,8 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer"
+              aria-label="Ordenar"
+              className="w-full sm:w-auto text-xs font-semibold bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-200 rounded-2xl px-4 py-3 focus:outline-none cursor-pointer border border-transparent hover:border-neutral-300 dark:hover:border-neutral-700 transition"
             >
               <option value="curated">Por Perfil &amp; Ocasião</option>
               <option value="price-desc">Preço: $$$$ → $</option>
@@ -566,7 +690,7 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
 
         <div className="mt-4 flex flex-col gap-3">
           {tab !== "favoritos" && (
-            <div className="filter-group no-scrollbar flex items-center gap-2 py-1 overflow-x-auto">
+            <div className="filter-group no-scrollbar flex items-center gap-2 py-1">
               {(tab === "hoteis" ? HOTEL_CATEGORIES : RESTAURANT_CATEGORIES).map((cat) => (
                 <button
                   key={cat.key}
@@ -638,7 +762,7 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
         {mapVisible && (
           <section className="mb-10">
             <div className="rounded-3xl overflow-hidden border border-black/[0.08] dark:border-white/[0.08] shadow-xl bg-white dark:bg-[#14171F]">
-              <div id="map-canvas" style={{ height: 420 }} />
+              <div id="map-canvas" />
             </div>
           </section>
         )}
@@ -660,30 +784,30 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             </button>
           </div>
         ) : sortBy === "curated" && tierFilter === "all" && tab !== "favoritos" ? (
-          <div className="space-y-14">
+          <div className="space-y-16">
             {availableTiers.map((tierKey) => {
               const group = filteredItems.filter((i) => i.tier === tierKey);
               if (group.length === 0) return null;
               const meta = (TIERS_META as any)[tierKey] || {
                 title: tierKey,
                 subtitle: "",
-                badge: "",
+                badge: "Curadoria",
               };
               return (
-                <section key={tierKey} className="space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-3 border-b border-black/[0.07] dark:border-white/[0.08]">
+                <section key={tierKey} className="curated-tier-section">
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-5 mb-7 border-b border-black/[0.07] dark:border-white/[0.08]">
                     <div>
-                      <div className="flex items-center gap-2.5 mb-1">
+                      <div className="flex items-center gap-2.5 mb-1.5">
                         {meta.badge && (
-                          <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-coral/12 text-coral">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-coral bg-coral/10 px-2.5 py-0.5 rounded-full">
                             {meta.badge}
                           </span>
                         )}
-                        <span className="text-xs text-neutral-400">
-                          {group.length} {group.length === 1 ? "opção" : "opções"}
+                        <span className="text-xs font-medium text-neutral-400">
+                          {group.length} {group.length === 1 ? "lugar" : "lugares"}
                         </span>
                       </div>
-                      <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 dark:text-white tracking-tight">
+                      <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 dark:text-white tracking-tight leading-none">
                         {meta.title}
                       </h2>
                     </div>
@@ -693,7 +817,7 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
                     {group.map(renderCard)}
                   </div>
                 </section>
@@ -701,7 +825,7 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
             {filteredItems.map(renderCard)}
           </div>
         )}
@@ -721,7 +845,7 @@ export default function HomeClient({ initialItems, source }: HomeClientProps) {
             <span className="font-serif italic text-xl text-neutral-800 dark:text-neutral-200">
               Aonde
             </span>
-            <span>· Curadoria independente de João Pessoa, Paraíba · Powered by Turso</span>
+            <span>· Curadoria independente de João Pessoa, Paraíba</span>
           </div>
           <div>
             Dados cartográficos{" "}
